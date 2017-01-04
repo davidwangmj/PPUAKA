@@ -24,7 +24,7 @@ typedef struct system_params_s {
 	char *pairFileName;
 	pairing_t pairing;
 	element_t g;
-	element_t h;
+	element_t h;  //h是否有用
 	element_t g_hat_alpha; //gs
 }* system_params_t;
 
@@ -48,19 +48,19 @@ typedef struct system_msk_s {
 *********************************************************  */
 
 typedef struct user_realid_s {
-	int realid;
+	unsigned char* rid;
 	
 }* user_realid_t;
 
-typedef struct user_pseud_s P{
-	int pseud;  
-	int timestamp;	
+typedef struct user_pseud_s {
+	unsigned char* pid;  
+	time_t timestamp;	
 }* user_pseud_t;
 
 
 typedef struct user_keypair_s{
-	element_t pub_key;
-	element_t prv_key;
+	element_t pub_key;	//G1
+	element_t prv_key;	//G1
 	
 }* user_keypair_t;
 
@@ -70,11 +70,10 @@ typedef struct user_keypair_s{
    user hint;
    user hint_plus;
    left/right key;
-   
-*********************************************************  */
+   *********************************************************  */
 
 typedef struct user_hint_s {
-	element_t beta;
+	element_t beta;		//xi
 	element_t hint;
 }* user_hint_t;
 
@@ -86,14 +85,14 @@ typedef struct user_key_material_s {
 }* user_key_material_t;
 
 typedef struct message_s {
-	int sid;
-	int pid;
+	unsigned char* sid;
+	unsigned char* pid;
 	int index;
 	element_t hint;
 }* message_t;
 
 typedef struct session_key_s {
-	element_t sk;
+	element_t k;
 }* session_key_t;
 
 /* **********************************************************
@@ -125,6 +124,14 @@ void Free_user_hint (user_hint_t hint);
 void Free_user_key_material (user_key_material_t material);
 void Free_user_signature (sign_t sign);
 void Free_user_session_key (session_key_t sk);
+
+/* **********************************************************
+   Hash function H1, H2, H3
+*********************************************************  */
+void element_from_string_1( element_t h, unsigned char* s );
+void element_from_string_2( element_t h, char* s, element_t t );
+void element_from_string_3( element_t h, element_t t );
+
 
 /* **********************************************************
    Generate a system params and corresponding master secret key, and
@@ -162,7 +169,7 @@ void User_keypair_gen (user_keypair_t *keypair,
    Generate first hint.
 *********************************************************  */
 						
-void User_hint_gen (user_hint_t *hint,
+void User_hint_gen (user_hint_t *userhint,
 					system_params_t params,
 					);
 					
@@ -173,7 +180,10 @@ void User_hint_gen (user_hint_t *hint,
 
 void User_key_material_gen (user_key_material_t * material,
 							user_pseud_t pseud,
-							system_params_t params
+							system_params_t params，
+							user_hint_t userhint,
+							user_hint_t hint_left,
+							user_hint_t hint_right,
 							);
 							
 /* **********************************************************
@@ -182,7 +192,10 @@ void User_key_material_gen (user_key_material_t * material,
 
 void User_sign (sign_t *sign,
 				message_t msg,
-				system_params_t params
+				system_params_t params,
+				user_keypair_t keypair,
+				user_hint_t hint,
+				int flag	//用来定义采用哪种签名方式
 				);
 
 /* **********************************************************
@@ -197,7 +210,8 @@ int User_verify (sign_t *sign,
 *********************************************************  */				
 
 void Session_key_gen (session_key_t * sk,
-					   user_key_material_t material
+					   user_key_material_t material,
+					   int group_number
 					  );
 					  
 					  
